@@ -97,11 +97,33 @@
 
                 <div><div class="section-title">備註事項</div><textarea id="f-notes" placeholder="備註內容..."></textarea></div>
 
-                <div class="grid grid-cols-2 gap-8">
-                    <div><div class="section-title">配合廠商</div><input type="text" id="f-vendor" placeholder="廠商名稱"></div>
-                    <div><div class="section-title">報價</div><input type="number" id="f-price" placeholder="NT$"></div>
-                </div>
-                <div class="flex justify-end gap-6"><button type="button" onclick="closeModal()" class="px-10 font-bold">取消</button><button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black">儲存並上傳</button></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 border-t-2 pt-10">
+    <div>
+        <div class="section-title">車輛規格</div>
+        <input type="text" id="f-vspec" list="vspecOptions" placeholder="選擇或輸入規格">
+        <datalist id="vspecOptions"></datalist>
+    </div>
+    
+    <div>
+        <div class="section-title">需求數量</div>
+        <input type="number" id="f-vqty" value="1" min="1">
+    </div>
+
+    <div>
+        <div class="section-title">配合廠商</div>
+        <input type="text" id="f-vendor" placeholder="廠商名稱">
+    </div>
+
+    <div>
+        <div class="section-title">報價</div>
+        <input type="number" id="f-price" placeholder="NT$">
+    </div>
+</div>
+
+<div class="flex justify-end gap-6 mt-8">
+    <button type="button" onclick="closeModal()" class="px-10 font-bold">取消</button>
+    <button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black">儲存並上傳</button>
+</div>
             </form>
         </div>
     </div>
@@ -142,14 +164,22 @@
         }
 
         function updateDatalists() {
-            const list = document.getElementById('clientOptions');
-            list.innerHTML = masterData.clients.map(c => `<option value="${c.客戶簡稱}">`).join('');
+        const list = document.getElementById('clientOptions');
+        // 對應試算表「客戶資料表」的「客戶簡稱」欄位
+        list.innerHTML = masterData.clients.map(c => `<option value="${c.客戶簡稱}">`).join('');
+        
+        // 建議順便把「車輛規格」的選單也加在這裡
+        const vList = document.getElementById('vspecOptions');
+        if (vList && masterData.vehicles) {
+            vList.innerHTML = masterData.vehicles.map(v => `<option value="${v}">`).join('');
         }
+    }
 
-        function handleClientLookup(val) {
-            const c = masterData.clients.find(x => x.客戶簡稱 === val);
-            if (c) document.getElementById('f-to-addr').value = c.下貨地址 || ''; // 連動地址
-        }
+    function handleClientLookup(val) {
+        const c = masterData.clients.find(x => x.客戶簡稱 === val);
+        // 當找到客戶時，自動將試算表的「下貨地址」填入表單
+        if (c) document.getElementById('f-to-addr').value = c.下貨地址 || ''; 
+    }
 
         function filterData() {
             const clientQ = document.getElementById('searchClient').value.toLowerCase();
@@ -225,31 +255,70 @@
         }
 
         document.getElementById('dispatchForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const cargo = []; const ns = document.getElementsByName('cn[]');
-            for(let i=0; i<ns.length; i++) if(ns[i].value) cargo.push({ n: ns[i].value, q: document.getElementsByName('cq[]')[i].value, u: document.getElementsByName('cu[]')[i].value });
-            const data = {
-                id: document.getElementById('editId').value || Date.now().toString(),
-                company: document.getElementById('f-company').value,
-                date: document.getElementById('f-date').value,
-                time: document.getElementById('f-time').value,
-                client: document.getElementById('f-client').value,
-                applicant: document.getElementById('f-applicant').value,
-                from: document.getElementById('f-from').value,
-                to_name: document.getElementById('f-to-name').value,
-                to_addr: document.getElementById('f-to-addr').value,
-                stop_c: document.getElementById('f-stop-c').value,
-                l: document.getElementById('f-l').value, w: document.getElementById('f-w').value,
-                h: document.getElementById('f-h').value, wt: document.getElementById('f-wt').value,
-                vendor: document.getElementById('f-vendor').value,
-                price: document.getElementById('f-price').value,
-                notes: document.getElementById('f-notes').value,
-                cargo: cargo
-            };
-            toggleLoading(true);
-            await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save', data }) });
-            setTimeout(() => { syncData(); closeModal(); }, 1200);
-        };
+    e.preventDefault();
+    
+    // 收集貨物品項清單
+    const cargo = []; 
+    const ns = document.getElementsByName('cn[]');
+    const qs = document.getElementsByName('cq[]');
+    const us = document.getElementsByName('cu[]');
+    for (let i = 0; i < ns.length; i++) {
+        if (ns[i].value) {
+            cargo.push({ 
+                n: ns[i].value, 
+                q: qs[i].value, 
+                u: us[i].value 
+            });
+        }
+    }
+
+    // 收集所有欄位資料，準備傳送至 GAS
+    const data = {
+        id: document.getElementById('editId').value || Date.now().toString(),
+        company: document.getElementById('f-company').value,
+        date: document.getElementById('f-date').value,
+        time: document.getElementById('f-time').value,
+        client: document.getElementById('f-client').value,
+        applicant: document.getElementById('f-applicant').value,
+        from: document.getElementById('f-from').value,
+        to_name: document.getElementById('f-to-name').value,
+        to_addr: document.getElementById('f-to-addr').value,
+        stop_c: document.getElementById('f-stop-c').value,
+        
+        // --- 新增：車輛相關欄位 ---
+        vspec: document.getElementById('f-vspec').value, // 抓取車輛規格
+        vqty: document.getElementById('f-vqty').value,   // 抓取需求數量
+        // -----------------------
+
+        l: document.getElementById('f-l').value, 
+        w: document.getElementById('f-w').value,
+        h: document.getElementById('f-h').value, 
+        wt: document.getElementById('f-wt').value,
+        vendor: document.getElementById('f-vendor').value,
+        price: document.getElementById('f-price').value,
+        notes: document.getElementById('f-notes').value,
+        cargo: cargo
+    };
+
+    toggleLoading(true);
+    try {
+        // 傳送資料至 Google Apps Script
+        await fetch(GAS_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify({ action: 'save', data }) 
+        });
+        
+        // 儲存後延遲同步並關閉視窗
+        setTimeout(() => { 
+            syncData(); 
+            closeModal(); 
+        }, 1200);
+    } catch (err) {
+        alert("儲存失敗，請檢查網路連線。");
+        toggleLoading(false);
+    }
+};
 
         function printDispatch(id) {
             const d = rawData.find(x => x.id.toString() === id.toString());
