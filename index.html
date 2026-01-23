@@ -1,4 +1,124 @@
-<script>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>何鑫/薪昌 - 雲端管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; font-size: 1.1rem; }
+        .section-title { color: #1e40af; font-weight: 800; border-left: 6px solid #2563eb; padding-left: 1rem; margin: 1.5rem 0; display: flex; align-items: center; }
+        .modal { display: none; position: fixed; z-index: 100; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        input, select, textarea { border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.85rem; width: 100%; font-size: 1.1rem; }
+        @media print { .no-print { display: none !important; } #printArea { display: block !important; } }
+        #printArea { display: none; font-family: "標楷體", serif; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="loading" class="fixed inset-0 bg-white/80 z-[200] hidden flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+        <p class="font-black text-blue-800 text-xl">連線同步中...</p>
+    </div>
+
+    <div class="max-w-7xl mx-auto no-print">
+        <header class="bg-white p-8 rounded-3xl shadow-2xl mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-600 p-5 rounded-2xl text-white shadow-lg"><i class="fas fa-truck-loading text-3xl"></i></div>
+                <div><h1 class="text-3xl font-black text-slate-800">何鑫實業 / 薪昌</h1></div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="syncData()" class="bg-slate-100 px-6 py-4 rounded-2xl font-black hover:bg-slate-200">同步</button>
+                <div class="flex bg-white border-2 rounded-2xl overflow-hidden">
+                    <select id="exportRange" class="border-none bg-transparent px-4 font-bold"><option value="year">今年</option><option value="month">本月</option></select>
+                    <button onclick="exportExcel()" class="bg-emerald-600 text-white px-6 py-4 font-black">轉出報表</button>
+                </div>
+                <button onclick="openModal('add')" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg">新增派車</button>
+            </div>
+        </header>
+
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="relative"><i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                <input type="text" id="searchClient" onkeyup="filterData()" placeholder="搜尋客戶名稱或品項..." class="pl-14 py-5 rounded-3xl border-none shadow-lg w-full">
+            </div>
+            <div class="relative"><i class="fas fa-calendar-day absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                <input type="month" id="searchMonth" onchange="filterData()" class="pl-14 py-5 rounded-3xl border-none shadow-lg w-full">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-100">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b-2"><tr class="text-slate-500 font-black text-sm uppercase"><th class="p-6">公司/時間</th><th class="p-6">客戶/行程</th><th class="p-6 text-right">報價</th><th class="p-6 text-center">操作</th></tr></thead>
+                <tbody id="dataTable" class="divide-y-2 divide-slate-50"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="formModal" class="modal flex items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] w-full max-w-5xl max-h-[94vh] overflow-hidden flex flex-col shadow-2xl">
+            <div class="p-8 border-b-2 flex justify-between items-center bg-slate-50">
+                <h2 id="modalTitle" class="text-3xl font-black">新增派車</h2>
+                <button onclick="closeModal()" class="text-4xl">&times;</button>
+            </div>
+            <form id="dispatchForm" class="flex-1 overflow-y-auto p-10 space-y-10">
+                <input type="hidden" id="editId">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div><div class="section-title">所屬公司</div><select id="f-company" class="font-black"><option value="何鑫實業">何鑫實業</option><option value="薪昌">薪昌</option></select></div>
+                    <div><div class="section-title">派車日期</div><input type="date" id="f-date" required></div>
+                    <div><div class="section-title">派車時間</div><input type="time" id="f-time" required></div>
+                </div>
+
+                <div>
+                    <div class="section-title">行程規劃</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                        <div><label class="text-sm font-black text-emerald-600">起點 (FROM)</label><input type="text" id="f-from" value="公司"></div>
+                        <div><label class="text-sm font-black text-rose-500">下貨地點 (TO NAME)</label><input type="text" id="f-to-name" placeholder="工地/名稱"></div>
+                        <div><label class="text-sm font-black text-blue-500">中繼點 C (STOP)</label><input type="text" id="f-stop-c" placeholder="選填 C 點"></div>
+                    </div>
+                    <textarea id="f-to-addr" rows="2" placeholder="詳細收貨地址 (連動資料庫)" class="mt-6"></textarea>
+                </div>
+
+                <div>
+                    <div class="section-title">貨物總尺寸與清單</div>
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <input type="text" id="f-l" placeholder="長 (L) [m]"><input type="text" id="f-w" placeholder="寬 (W) [m]"><input type="text" id="f-h" placeholder="高 (H) [m]"><input type="text" id="f-wt" placeholder="重量 (kg)">
+                    </div>
+                    <div id="cargoList" class="space-y-4"></div>
+                    <button type="button" onclick="addCargoRow()" class="mt-4 w-full border-2 border-dashed p-4 rounded-xl text-blue-600">+ 新增品項</button>
+                </div>
+
+                <div><div class="section-title">備註事項</div><textarea id="f-notes" placeholder="原本的詳細地址改成備註於此..."></textarea></div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div><div class="section-title">配合廠商</div><input type="text" id="f-vendor" list="vendorOptions"><datalist id="vendorOptions"></datalist></div>
+                    <div><div class="section-title">報價</div><input type="number" id="f-price" placeholder="NT$"></div>
+                </div>
+                <div class="flex justify-end gap-6"><button type="button" onclick="closeModal()" class="px-10 font-bold">取消</button><button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black">儲存</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="printArea">
+        <div class="text-center mb-8"><h1 id="p-company" class="text-4xl font-black mb-2">何鑫實業有限公司</h1><h2 class="text-2xl font-bold tracking-widest">派 車 申 請 單</h2></div>
+        <table class="w-full border-2 border-black text-lg mb-10">
+            <tr><td class="border p-4 bg-gray-100 font-bold w-1/4">填單日期</td><td id="p-date" class="border p-4 w-1/4"></td><td class="border p-4 bg-gray-100 font-bold w-1/4">申請人 / 部門</td><td id="p-applicant" class="border p-4 w-1/4"></td></tr>
+            <tr><td class="border p-4 bg-gray-100 font-bold">預定時間</td><td id="p-time" class="border p-4" colspan="3"></td></tr>
+            <tr><td class="border p-4 bg-gray-100 font-bold">上貨地點 (FROM)</td><td id="p-from" class="border p-4"></td><td class="border p-4 bg-gray-100 font-bold">下貨地點 (TO)</td><td id="p-to" class="border p-4"></td></tr>
+            <tr><td class="border p-4 bg-gray-100 font-bold">中繼地點 (STOP C)</td><td id="p-stop-c" class="border p-4" colspan="3"></td></tr>
+            <tr><td class="border p-4 bg-gray-100 font-bold">詳細地址</td><td id="p-to-addr" class="border p-4" colspan="3"></td></tr>
+        </table>
+        <table class="w-full border-2 border-black text-lg mb-10">
+            <thead><tr class="bg-gray-100"><th class="border p-2">序號</th><th class="border p-2">品項名稱/型號</th><th class="border p-2">數量</th><th class="border p-2">單位</th></tr></thead>
+            <tbody id="p-cargo-list"></tbody>
+        </table>
+        <div class="border-2 border-black p-4 mb-10"><strong>貨物規格：</strong> 長：<span id="p-l"></span>m | 寬：<span id="p-w"></span>m | 高：<span id="p-h"></span>m | 重：<span id="p-wt"></span>kg</div>
+        <div class="border-2 border-black p-4 mb-10"><strong>備註事項：</strong><p id="p-notes"></p></div>
+        <div class="flex justify-between mt-20 font-bold border-t-2 border-black pt-8"><div>申請人簽名：__________</div><div>部門主管：__________</div><div>車輛出貨完畢：__________</div></div>
+    </div>
+
+   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxuPNtja0KUhPrYlUnRnu3uw-Di7xiucp4ePI2GsTB8ytQuqi1pc1fHxCOmak_ckarpxA/exec";
     let rawData = [];
     let masterData = { clients: [] }; // 確保客戶資料有容器
@@ -150,3 +270,5 @@
 
     document.addEventListener('DOMContentLoaded', syncData);
 </script>
+</body>
+</html>
