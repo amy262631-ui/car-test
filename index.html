@@ -126,17 +126,54 @@
         const fmtDate = (v) => (!v || v.includes("1899")) ? "-" : new Date(v).toLocaleDateString('zh-TW').replace(/\//g, '-');
         const fmtTime = (v) => (!v || !v.includes("T")) ? v : v.split("T")[1].substring(0, 5);
 
-        async function syncData() {
-            toggleLoading(true);
-            try {
-                const res = await fetch(GAS_URL).then(r => r.json());
-                rawData = (res.records || []).map(r => ({ ...r,
-                    needs: r.needs ? JSON.parse(r.needs) : [],
-                    cargo: r.cargo ? JSON.parse(r.cargo) : []
-                }));
-                filterData();
-            } catch (e) { alert("連線失敗！"); } finally { toggleLoading(false); }
-        }
+        // --- 關鍵修正：確保客戶資料正確載入 ---
+async function syncData() {
+    toggleLoading(true);
+    try {
+        const response = await fetch(GAS_URL);
+        const res = await response.json();
+        
+        // 1. 抓取客戶資料，對應你的試算表標題「客戶簡稱」
+        masterData.clients = res.clients || []; 
+        
+        // 2. 處理派車紀錄與格式化時間
+        rawData = (res.records || []).map(r => ({
+            ...r,
+            needs: typeof r.needs === 'string' ? JSON.parse(r.needs) : (r.needs || []),
+            cargo: typeof r.cargo === 'string' ? JSON.parse(r.cargo) : (r.cargo || [])
+        }));
+
+        console.log("客戶資料載入成功:", masterData.clients.length, "筆"); // 偵錯用
+        updateDatalists(); // 更新下拉選單
+        filterData();      // 渲染列表
+    } catch (e) {
+        console.error("同步失敗:", e);
+        alert("資料同步失敗，請檢查 GAS 網址與試算表分頁名稱。");
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// --- 修正：更新客戶下拉選單 ---
+function updateDatalists() {
+    const list = document.getElementById('clientOptions');
+    // 使用「客戶簡稱」作為選單值
+    list.innerHTML = masterData.clients.map(c => 
+        `<option value="${c.客戶簡稱}">`
+    ).join('');
+}
+
+// --- 修正：客戶連動地址功能 ---
+function handleClientLookup(val) {
+    // 尋找匹配的客戶
+    const c = masterData.clients.find(x => x.客戶簡稱 === val);
+    if (c) {
+        // 自動帶入資料庫中的「下貨地址」
+        document.getElementById('f-to-addr').value = c.下貨地址 || '';
+        // 同時建議帶入聯絡資訊至備註或特定欄位
+        console.log("已連動客戶:", c.客戶簡稱);
+    }
+}
 
         function filterData() {
             const clientQ = document.getElementById('searchClient').value.toLowerCase();
