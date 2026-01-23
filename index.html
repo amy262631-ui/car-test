@@ -8,10 +8,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; font-size: 1.1rem; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; font-size: 1.15rem; }
         .section-title { color: #1e40af; font-weight: 800; border-left: 6px solid #2563eb; padding-left: 1rem; margin: 1.5rem 0; display: flex; align-items: center; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        input, select, textarea { border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.8rem; width: 100%; font-size: 1.1rem; }
+        input, select, textarea { border: 2px solid #e2e8f0; border-radius: 0.75rem; padding: 0.85rem; width: 100%; font-size: 1.15rem; }
+        .btn-action { transition: all 0.2s; font-weight: 900; }
+        .btn-action:hover { transform: scale(1.05); }
         @media print { .no-print { display: none !important; } #printArea { display: block !important; } }
         #printArea { display: none; }
     </style>
@@ -26,16 +28,16 @@
     <div class="max-w-7xl mx-auto no-print">
         <header class="bg-white p-8 rounded-3xl shadow-2xl mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-4">
-                <div class="bg-blue-600 p-5 rounded-2xl text-white"><i class="fas fa-truck-moving text-3xl"></i></div>
+                <div class="bg-blue-600 p-5 rounded-2xl text-white shadow-lg"><i class="fas fa-truck-loading text-3xl"></i></div>
                 <div>
-                    <h1 class="text-3xl font-black text-slate-800">何鑫實業 / 薪昌</h1>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tighter">何鑫實業 / 薪昌</h1>
                     <p class="text-sm font-bold text-blue-500 tracking-widest uppercase">Cloud Management System</p>
                 </div>
             </div>
             <div class="flex gap-4 w-full md:w-auto">
-                <button onclick="syncData()" class="flex-1 bg-slate-100 px-6 py-4 rounded-2xl font-black hover:bg-slate-200 transition-all">同步資料</button>
-                <button onclick="exportYearlyExcel()" class="flex-1 bg-emerald-600 text-white px-6 py-4 rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all">一鍵轉出Excel報表</button>
-                <button onclick="openModal('add')" class="flex-1 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg hover:bg-blue-700 transition-all">新增派車</button>
+                <button onclick="syncData()" class="btn-action flex-1 bg-slate-100 px-6 py-4 rounded-2xl hover:bg-slate-200">同步資料</button>
+                <button onclick="exportMonthlyReport()" class="btn-action flex-1 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-lg hover:bg-emerald-700">一鍵轉出報表</button>
+                <button onclick="openModal('add')" class="btn-action flex-1 bg-blue-600 text-white px-8 py-4 rounded-2xl shadow-lg hover:bg-blue-700">新增派車</button>
             </div>
         </header>
 
@@ -52,7 +54,7 @@
                     </tr>
                 </thead>
                 <tbody id="dataTable" class="divide-y-2 divide-slate-50">
-                    <tr><td colspan="6" class="p-20 text-center text-slate-400 font-bold text-xl">載入中...</td></tr>
+                    <tr><td colspan="6" class="p-20 text-center text-slate-300 font-bold">資料同步中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -65,13 +67,13 @@
                 <button onclick="closeModal()" class="text-4xl font-bold text-slate-300 hover:text-slate-600">&times;</button>
             </div>
             
-            <form id="dispatchForm" class="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+            <form id="dispatchForm" class="flex-1 overflow-y-auto p-10 space-y-10">
                 <input type="hidden" id="editId">
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
                         <div class="section-title"><i class="fas fa-building mr-2"></i> 所屬公司</div>
-                        <select id="f-company" class="font-bold">
+                        <select id="f-company" class="font-black text-blue-700">
                             <option value="何鑫實業">何鑫實業</option>
                             <option value="薪昌">薪昌</option>
                         </select>
@@ -81,7 +83,7 @@
                 </div>
 
                 <div>
-                    <div class="section-title"><i class="fas fa-user-tag mr-2"></i> 客戶資訊</div>
+                    <div class="section-title"><i class="fas fa-user-tag mr-2"></i> 客戶與申請人</div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="text" id="f-client" list="clientOptions" placeholder="客戶簡稱 *" oninput="handleClientLookup(this.value)">
                         <datalist id="clientOptions"></datalist>
@@ -92,16 +94,16 @@
                 <div>
                     <div class="section-title"><i class="fas fa-plus-square mr-2"></i> 特殊輔助設備 (可複選)</div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all font-bold">
+                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 font-bold">
                             <input type="checkbox" name="f-needs" value="需車尾門" class="w-6 h-6 mr-3"> 需車尾門
                         </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all font-bold">
+                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 font-bold">
                             <input type="checkbox" name="f-needs" value="需油壓板車" class="w-6 h-6 mr-3"> 需油壓板車
                         </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all font-bold">
+                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 font-bold">
                             <input type="checkbox" name="f-needs" value="需手拉吊車" class="w-6 h-6 mr-3"> 需手拉吊車
                         </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all font-bold">
+                        <label class="flex items-center p-4 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 font-bold">
                             <input type="checkbox" name="f-needs" value="需吊籃" class="w-6 h-6 mr-3"> 需吊籃
                         </label>
                     </div>
@@ -114,7 +116,7 @@
                         <div><label class="text-sm font-black text-rose-500 ml-2">下貨地點名稱 (TO NAME)</label><input type="text" id="f-to-name" placeholder="例如：工地名稱"></div>
                     </div>
                     <label class="text-sm font-black text-slate-400 ml-2">詳細下貨地址 *</label>
-                    <textarea id="f-address" rows="2" placeholder="請輸入完整收貨地址"></textarea>
+                    <textarea id="f-address" rows="2" placeholder="請輸入收貨地址"></textarea>
                 </div>
 
                 <div>
@@ -128,7 +130,7 @@
                 </div>
 
                 <div>
-                    <div class="section-title"><i class="fas fa-list-ul mr-2"></i> 出貨品項清單 * (請至少填寫一項)</div>
+                    <div class="section-title"><i class="fas fa-list-ul mr-2"></i> 出貨品項清單 (請至少填寫一項)</div>
                     <div id="cargoList" class="space-y-4"></div>
                     <button type="button" onclick="addCargoRow()" class="mt-6 w-full border-2 border-dashed border-blue-200 p-4 rounded-2xl text-blue-600 font-black hover:bg-blue-50">
                         <i class="fas fa-plus mr-2"></i> 新增品項
@@ -136,44 +138,45 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t-2 pt-10">
-                    <div><div class="section-title">配合廠商</div><input type="text" id="f-vendor" list="vendorOptions"><datalist id="vendorOptions"></datalist></div>
-                    <div><div class="section-title">廠商報價</div><input type="number" id="f-price" placeholder="NT$"></div>
+                    <div><div class="section-title">配合廠商 / 車輛規格</div><input type="text" id="f-vendor" list="vendorOptions" placeholder="廠商"><datalist id="vendorOptions"></datalist><input type="text" id="f-vspec" placeholder="車輛規格 (例如: 回頭車)" class="mt-4"></div>
+                    <div><div class="section-title">廠商報價</div><input type="number" id="f-price" placeholder="NT$ 金額"></div>
                 </div>
 
                 <div class="sticky bottom-0 bg-white pt-6 border-t-2 flex justify-end gap-6">
                     <button type="button" onclick="closeModal()" class="px-10 py-5 font-black text-slate-400">取消</button>
-                    <button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black text-xl shadow-xl shadow-blue-100">儲存</button>
+                    <button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black text-xl shadow-xl hover:bg-blue-700">儲存資料</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="printArea" class="p-10 text-black">
-        <h1 id="p-title" class="text-4xl font-black text-center mb-10 border-b-4 border-black pb-4"></h1>
-        <div class="grid grid-cols-2 gap-6 text-xl mb-10">
+        <h1 id="p-title" class="text-4xl font-black text-center mb-10 border-b-8 border-black pb-4 uppercase"></h1>
+        <div class="grid grid-cols-2 gap-8 text-2xl mb-10">
             <p><strong>日期時間：</strong> <span id="p-dt"></span></p>
             <p><strong>申請人員：</strong> <span id="p-user"></span></p>
             <p><strong>客戶簡稱：</strong> <span id="p-client"></span></p>
-            <p><strong>聯絡電話：</strong> <span id="p-phone"></span></p>
-            <p class="col-span-2"><strong>收貨地址：</strong> <span id="p-addr"></span></p>
-            <p class="col-span-2"><strong>行程路線：</strong> <span id="p-route"></span></p>
+            <p class="col-span-2"><strong>下貨地址：</strong> <span id="p-addr"></span></p>
+            <p class="col-span-2"><strong>輔助設備：</strong> <span id="p-needs"></span></p>
         </div>
-        <table class="w-full border-4 border-black mb-10 text-xl">
-            <thead><tr class="bg-slate-100"><th class="border-2 border-black p-4">品項名稱</th><th class="border-2 border-black p-4">數量單位</th><th class="border-2 border-black p-4">備註/規格</th></tr></thead>
+        <table class="w-full border-4 border-black text-2xl">
+            <thead><tr class="bg-slate-100"><th class="border-2 border-black p-4">品項名稱</th><th class="border-2 border-black p-4">數量單位</th><th class="border-2 border-black p-4">備註</th></tr></thead>
             <tbody id="p-cargo"></tbody>
         </table>
-        <div class="flex justify-between mt-20 font-black text-2xl">
-            <div>核准主管：__________</div>
-            <div>現場簽章：__________</div>
-            <div>司機簽章：__________</div>
-        </div>
     </div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxuPNtja0KUhPrYlUnRnu3uw-Di7xiucp4ePI2GsTB8ytQuqi1pc1fHxCOmak_ckarpxA/exec";
 
-        let masterData = { clients: [], vendors: [], vehicles: [] };
+        let masterData = { clients: [], vendors: [] };
         let dispatches = [];
+
+        // 格式化日期時間：修復 ISO 格式問題
+        function formatDateTime(isoStr) {
+            if (!isoStr || isoStr.includes("1899-12-30")) return "-";
+            const d = new Date(isoStr);
+            return isNaN(d.getTime()) ? isoStr : d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+        }
 
         async function syncData() {
             toggleLoading(true);
@@ -184,111 +187,74 @@
                 
                 dispatches = (res.records || []).map(r => ({
                     ...r,
+                    date: formatDateTime(r.date),
+                    time: r.time && r.time.includes("T") ? r.time.split("T")[1].substring(0,5) : r.time,
                     needs: r.needs ? JSON.parse(r.needs) : [],
                     cargo: r.cargo ? JSON.parse(r.cargo) : []
                 })).sort((a,b) => b.id - a.id);
 
                 renderTable();
                 updateDatalists();
-            } catch (err) { alert("連線失敗，請檢查網址"); }
+            } catch (err) { alert("同步連線失敗，請檢查網址"); }
             finally { toggleLoading(false); }
         }
 
         function renderTable() {
             const tbody = document.getElementById('dataTable');
             tbody.innerHTML = dispatches.map(d => `
-                <tr class="hover:bg-slate-50 transition-all font-bold">
+                <tr class="hover:bg-slate-50 font-bold border-b-2 border-slate-50">
                     <td class="p-6">
                         <div class="text-2xl font-black ${d.company === '何鑫實業' ? 'text-blue-600' : 'text-orange-600'}">${d.company}</div>
-                        <div class="text-sm text-slate-400 mt-1">${d.date} | ${d.time}</div>
+                        <div class="text-lg text-slate-500 mt-1">${d.date} | ${d.time}</div>
                     </td>
                     <td class="p-6 text-2xl text-slate-800">${d.client}</td>
                     <td class="p-6 text-slate-600 text-lg">${d.vspec || '-'}</td>
                     <td class="p-6">
-                        <div class="text-emerald-600 text-sm">公司 ⮕</div>
-                        <div class="text-slate-800">${d.address}</div>
+                        <div class="text-emerald-600 text-sm font-black">FROM: 公司 ⮕</div>
+                        <div class="text-slate-800 text-lg">${d.address}</div>
                     </td>
                     <td class="p-6 text-right text-2xl font-black text-slate-900">$${(Number(d.price) || 0).toLocaleString()}</td>
                     <td class="p-6 text-center">
-                        <div class="flex gap-2 justify-center">
-                            <button onclick="openModal('edit', '${d.id}')" class="text-blue-600 hover:scale-110">編輯</button>
-                            <button onclick="printDispatch('${d.id}')" class="text-emerald-600 hover:scale-110">列印</button>
-                            <button onclick="deleteDispatch('${d.id}')" class="text-rose-400 hover:scale-110">刪除</button>
+                        <div class="flex gap-4 justify-center font-black">
+                            <button onclick="openModal('edit', '${d.id}')" class="text-blue-600">編輯</button>
+                            <button onclick="printDispatch('${d.id}')" class="text-emerald-600">列印</button>
+                            <button onclick="deleteDispatch('${d.id}')" class="text-rose-400">刪除</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function addCargoRow(n='', q='1', u='箱') {
-            document.getElementById('cargoList').insertAdjacentHTML('beforeend', `
-            <div class="flex gap-4 items-center animate-fadeIn">
-                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱/型號" class="flex-[3]">
-                <input type="number" name="cq[]" value="${q}" class="flex-1 text-center">
-                <input type="text" name="cu[]" value="${u}" class="flex-1 text-center">
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 px-4 text-2xl"><i class="fas fa-trash"></i></button>
-            </div>`);
-        }
+        function exportMonthlyReport() {
+            const vendorSummary = {};
+            let total = 0;
+            const data = dispatches.map(d => {
+                const p = Number(d.price) || 0;
+                total += p;
+                if(d.vendor) vendorSummary[d.vendor] = (vendorSummary[d.vendor] || 0) + p;
+                return { '公司': d.company, '日期': d.date, '客戶': d.client, '廠商': d.vendor, '金額': p };
+            });
+            // 加入合計列
+            data.push({});
+            data.push({ '公司': '--- 廠商合計統計 ---' });
+            Object.keys(vendorSummary).forEach(v => data.push({ '公司': v, '金額': vendorSummary[v] }));
+            data.push({ '公司': '總計金額', '金額': total });
 
-        function exportYearlyExcel() {
-            if(!dispatches.length) return alert("無資料");
-            const data = dispatches.map(d => ({
-                '公司': d.company, '日期': d.date, '客戶': d.client, '廠商': d.vendor, '金額': Number(d.price) || 0
-            }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "報表統計");
-            XLSX.writeFile(wb, `何鑫薪昌_派車統計_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "派車月報統計");
+            XLSX.writeFile(wb, `派車報表_${new Date().toLocaleDateString()}.xlsx`);
         }
 
-        async function saveToCloud(data) {
-            toggleLoading(true);
-            await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save', data }) });
-            setTimeout(() => { syncData(); closeModal(); }, 1200);
+        function addCargoRow(n='', q='1', u='箱') {
+            document.getElementById('cargoList').insertAdjacentHTML('beforeend', `
+            <div class="flex gap-4 items-center">
+                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱/型號" class="flex-[4]">
+                <input type="number" name="cq[]" value="${q}" class="flex-1 text-center">
+                <input type="text" name="cu[]" value="${u}" class="flex-1 text-center">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 px-4 text-3xl">&times;</button>
+            </div>`);
         }
-
-        function openModal(mode, id = null) {
-            document.getElementById('dispatchForm').reset();
-            document.getElementById('cargoList').innerHTML = '';
-            document.getElementById('editId').value = id || '';
-            if(id) {
-                const d = dispatches.find(x => x.id.toString() === id.toString());
-                if(d) {
-                    document.getElementById('f-company').value = d.company;
-                    ['date','time','applicant','client','address','vendor','price','l','w','h','wt'].forEach(k => {
-                        const el = document.getElementById('f-'+k); if(el) el.value = d[k];
-                    });
-                    document.querySelectorAll('input[name="f-needs"]').forEach(cb => cb.checked = d.needs.includes(cb.value));
-                    d.cargo.forEach(c => addCargoRow(c.n, c.q, c.u));
-                }
-            } else { addCargoRow(); }
-            document.getElementById('formModal').style.display = 'flex';
-        }
-
-        document.getElementById('dispatchForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const cargo = [];
-            const ns = document.getElementsByName('cn[]');
-            for(let i=0; i<ns.length; i++) {
-                if(ns[i].value) cargo.push({ n: ns[i].value, q: document.getElementsByName('cq[]')[i].value, u: document.getElementsByName('cu[]')[i].value });
-            }
-            const data = {
-                id: document.getElementById('editId').value || Date.now().toString(),
-                company: document.getElementById('f-company').value,
-                date: document.getElementById('f-date').value,
-                time: document.getElementById('f-time').value,
-                client: document.getElementById('f-client').value,
-                applicant: document.getElementById('f-applicant').value,
-                address: document.getElementById('f-address').value,
-                needs: Array.from(document.querySelectorAll('input[name="f-needs"]:checked')).map(cb => cb.value),
-                l: document.getElementById('f-l').value, w: document.getElementById('f-w').value,
-                h: document.getElementById('f-h').value, wt: document.getElementById('f-wt').value,
-                vendor: document.getElementById('f-vendor').value,
-                price: document.getElementById('f-price').value,
-                cargo: cargo
-            };
-            await saveToCloud(data);
-        };
 
         function printDispatch(id) {
             const d = dispatches.find(x => x.id.toString() === id.toString());
@@ -296,13 +262,16 @@
             document.getElementById('p-dt').innerText = d.date + " " + d.time;
             document.getElementById('p-client').innerText = d.client;
             document.getElementById('p-addr').innerText = d.address;
+            document.getElementById('p-user').innerText = d.applicant || "-";
+            document.getElementById('p-needs').innerText = d.needs.join(", ") || "無";
             document.getElementById('p-cargo').innerHTML = d.cargo.map(c => `<tr><td class="border-2 border-black p-4">${c.n}</td><td class="border-2 border-black p-4 text-center">${c.q}${c.u}</td><td class="border-2 border-black p-4"></td></tr>`).join('');
             window.print();
         }
 
+        async function deleteDispatch(id) { if(confirm('確定刪除紀錄？')) { toggleLoading(true); await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'delete', data: {id} }) }); setTimeout(syncData, 1000); } }
         function closeModal() { document.getElementById('formModal').style.display='none'; }
         function toggleLoading(s) { document.getElementById('loading').style.display = s?'flex':'none'; }
-        document.addEventListener('DOMContentLoaded', () => { if(GAS_URL.length > 10) syncData(); });
+        document.addEventListener('DOMContentLoaded', () => { if(GAS_URL.length > 20) syncData(); });
         function searchTable() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             document.querySelectorAll('#dataTable tr').forEach(row => row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none');
