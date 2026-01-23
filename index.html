@@ -30,7 +30,7 @@
                 <div><h1 class="text-3xl font-black text-slate-800">何鑫實業 / 薪昌</h1></div>
             </div>
             <div class="flex gap-4">
-                <button onclick="syncData()" class="bg-slate-100 px-6 py-4 rounded-2xl font-black hover:bg-slate-200">同步</button>
+                <button onclick="syncData()" class="bg-slate-100 px-6 py-4 rounded-2xl font-black hover:bg-slate-200">同步資料</button>
                 <div class="flex bg-white border-2 rounded-2xl overflow-hidden">
                     <select id="exportRange" class="border-none bg-transparent px-4 font-bold"><option value="year">今年</option><option value="month">本月</option></select>
                     <button onclick="exportExcel()" class="bg-emerald-600 text-white px-6 py-4 font-black">轉出報表</button>
@@ -51,7 +51,9 @@
         <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-100">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 border-b-2"><tr class="text-slate-500 font-black text-sm uppercase"><th class="p-6">公司/時間</th><th class="p-6">客戶/行程</th><th class="p-6 text-right">報價</th><th class="p-6 text-center">操作</th></tr></thead>
-                <tbody id="dataTable" class="divide-y-2 divide-slate-50"></tbody>
+                <tbody id="dataTable" class="divide-y-2 divide-slate-50">
+                    <tr><td colspan="4" class="p-10 text-center font-bold">尚未同步資料...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -66,209 +68,205 @@
                 <input type="hidden" id="editId">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div><div class="section-title">所屬公司</div><select id="f-company" class="font-black"><option value="何鑫實業">何鑫實業</option><option value="薪昌">薪昌</option></select></div>
-                    <div><div class="section-title">派車日期</div><input type="date" id="f-date" required></div>
-                    <div><div class="section-title">派車時間</div><input type="time" id="f-time" required></div>
+                    <div><div class="section-title">日期</div><input type="date" id="f-date" required></div>
+                    <div><div class="section-title">時間</div><input type="time" id="f-time" required></div>
                 </div>
 
                 <div>
-                    <div class="section-title">行程規劃</div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                        <div><label class="text-sm font-black text-emerald-600">起點 (FROM)</label><input type="text" id="f-from" value="公司"></div>
-                        <div><label class="text-sm font-black text-rose-500">下貨地點 (TO NAME)</label><input type="text" id="f-to-name" placeholder="工地/名稱"></div>
-                        <div><label class="text-sm font-black text-blue-500">中繼點 C (STOP)</label><input type="text" id="f-stop-c" placeholder="選填 C 點"></div>
+                    <div class="section-title">行程與客戶</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                        <div><label class="text-sm font-black">客戶簡稱 (連動)</label><input type="text" id="f-client" list="clientOptions" oninput="handleClientLookup(this.value)"><datalist id="clientOptions"></datalist></div>
+                        <div><label class="text-sm font-black">申請人</label><input type="text" id="f-applicant"></div>
                     </div>
-                    <textarea id="f-to-addr" rows="2" placeholder="詳細收貨地址 (連動資料庫)" class="mt-6"></textarea>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        <div><label class="text-sm font-black text-emerald-600">起點 (FROM)</label><input type="text" id="f-from" value="公司"></div>
+                        <div><label class="text-sm font-black text-rose-500">目的地名稱 (TO)</label><input type="text" id="f-to-name" placeholder="工地/地點"></div>
+                        <div><label class="text-sm font-black text-blue-500">中繼點 C</label><input type="text" id="f-stop-c" placeholder="選填"></div>
+                    </div>
+                    <textarea id="f-to-addr" rows="2" placeholder="詳細地址 (客戶資料庫自動帶入)" class="mt-6"></textarea>
                 </div>
 
                 <div>
-                    <div class="section-title">貨物總尺寸與清單</div>
+                    <div class="section-title">貨物規格與清單</div>
                     <div class="grid grid-cols-4 gap-4 mb-6">
-                        <input type="text" id="f-l" placeholder="長 (L) [m]"><input type="text" id="f-w" placeholder="寬 (W) [m]"><input type="text" id="f-h" placeholder="高 (H) [m]"><input type="text" id="f-wt" placeholder="重量 (kg)">
+                        <input type="text" id="f-l" placeholder="長 (m)"><input type="text" id="f-w" placeholder="寬 (m)"><input type="text" id="f-h" placeholder="高 (m)"><input type="text" id="f-wt" placeholder="重量 (kg)">
                     </div>
                     <div id="cargoList" class="space-y-4"></div>
                     <button type="button" onclick="addCargoRow()" class="mt-4 w-full border-2 border-dashed p-4 rounded-xl text-blue-600">+ 新增品項</button>
                 </div>
 
-                <div><div class="section-title">備註事項</div><textarea id="f-notes" placeholder="原本的詳細地址改成備註於此..."></textarea></div>
+                <div><div class="section-title">備註事項</div><textarea id="f-notes" placeholder="備註內容..."></textarea></div>
 
                 <div class="grid grid-cols-2 gap-8">
-                    <div><div class="section-title">配合廠商</div><input type="text" id="f-vendor" list="vendorOptions"><datalist id="vendorOptions"></datalist></div>
+                    <div><div class="section-title">配合廠商</div><input type="text" id="f-vendor" placeholder="廠商名稱"></div>
                     <div><div class="section-title">報價</div><input type="number" id="f-price" placeholder="NT$"></div>
                 </div>
-                <div class="flex justify-end gap-6"><button type="button" onclick="closeModal()" class="px-10 font-bold">取消</button><button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black">儲存</button></div>
+                <div class="flex justify-end gap-6"><button type="button" onclick="closeModal()" class="px-10 font-bold">取消</button><button type="submit" class="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black">儲存並上傳</button></div>
             </form>
         </div>
     </div>
 
     <div id="printArea">
-        <div class="text-center mb-8"><h1 id="p-company" class="text-4xl font-black mb-2">何鑫實業有限公司</h1><h2 class="text-2xl font-bold tracking-widest">派 車 申 請 單</h2></div>
-        <table class="w-full border-2 border-black text-lg mb-10">
-            <tr><td class="border p-4 bg-gray-100 font-bold w-1/4">填單日期</td><td id="p-date" class="border p-4 w-1/4"></td><td class="border p-4 bg-gray-100 font-bold w-1/4">申請人 / 部門</td><td id="p-applicant" class="border p-4 w-1/4"></td></tr>
-            <tr><td class="border p-4 bg-gray-100 font-bold">預定時間</td><td id="p-time" class="border p-4" colspan="3"></td></tr>
-            <tr><td class="border p-4 bg-gray-100 font-bold">上貨地點 (FROM)</td><td id="p-from" class="border p-4"></td><td class="border p-4 bg-gray-100 font-bold">下貨地點 (TO)</td><td id="p-to" class="border p-4"></td></tr>
-            <tr><td class="border p-4 bg-gray-100 font-bold">中繼地點 (STOP C)</td><td id="p-stop-c" class="border p-4" colspan="3"></td></tr>
-            <tr><td class="border p-4 bg-gray-100 font-bold">詳細地址</td><td id="p-to-addr" class="border p-4" colspan="3"></td></tr>
+        <h1 id="p-company" class="text-center text-4xl font-black border-b-4 border-black pb-4 mb-10">派車申請單</h1>
+        <div id="p-content" class="text-2xl space-y-4 mb-10"></div>
+        <table class="w-full border-2 border-black text-xl mb-10">
+            <thead><tr class="bg-gray-100"><th class="border p-2">品項</th><th class="border p-2">數量</th></tr></thead>
+            <tbody id="p-cargo"></tbody>
         </table>
-        <table class="w-full border-2 border-black text-lg mb-10">
-            <thead><tr class="bg-gray-100"><th class="border p-2">序號</th><th class="border p-2">品項名稱/型號</th><th class="border p-2">數量</th><th class="border p-2">單位</th></tr></thead>
-            <tbody id="p-cargo-list"></tbody>
-        </table>
-        <div class="border-2 border-black p-4 mb-10"><strong>貨物規格：</strong> 長：<span id="p-l"></span>m | 寬：<span id="p-w"></span>m | 高：<span id="p-h"></span>m | 重：<span id="p-wt"></span>kg</div>
-        <div class="border-2 border-black p-4 mb-10"><strong>備註事項：</strong><p id="p-notes"></p></div>
-        <div class="flex justify-between mt-20 font-bold border-t-2 border-black pt-8"><div>申請人簽名：__________</div><div>部門主管：__________</div><div>車輛出貨完畢：__________</div></div>
+        <div class="flex justify-between mt-20 font-bold text-2xl border-t-2 border-black pt-10"><div>申請人簽名：__________</div><div>主管簽核：__________</div><div>司機簽收：__________</div></div>
     </div>
 
-   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxuPNtja0KUhPrYlUnRnu3uw-Di7xiucp4ePI2GsTB8ytQuqi1pc1fHxCOmak_ckarpxA/exec";
-    let rawData = [];
-    let masterData = { clients: [] }; // 確保客戶資料有容器
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxuPNtja0KUhPrYlUnRnu3uw-Di7xiucp4ePI2GsTB8ytQuqi1pc1fHxCOmak_ckarpxA/exec";
+        let rawData = [];
+        let masterData = { clients: [] };
 
-    const fmtDate = (v) => (!v || v.includes("1899")) ? "-" : new Date(v).toLocaleDateString('zh-TW').replace(/\//g, '-');
-    const fmtTime = (v) => (!v || !v.includes("T")) ? v : v.split("T")[1].substring(0, 5);
+        const fmtDate = (v) => (!v || v.toString().includes("1899")) ? "-" : new Date(v).toLocaleDateString('zh-TW').replace(/\//g, '-');
+        const fmtTime = (v) => (!v || !v.toString().includes("T")) ? v : v.split("T")[1].substring(0, 5);
 
-    // 同步資料
-    async function syncData() {
-        toggleLoading(true);
-        try {
-            const response = await fetch(GAS_URL);
-            const res = await response.json();
-            masterData.clients = res.clients || []; // 讀取客戶資料表
-            rawData = (res.records || []).map(r => ({
-                ...r,
-                needs: typeof r.needs === 'string' ? JSON.parse(r.needs) : (r.needs || []),
-                cargo: typeof r.cargo === 'string' ? JSON.parse(r.cargo) : (r.cargo || [])
-            }));
-            updateDatalists();
-            filterData();
-        } catch (e) {
-            alert("同步失敗，請檢查網路或 GAS 網址。");
-        } finally {
-            toggleLoading(false);
+        async function syncData() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(GAS_URL);
+                const res = await response.json();
+                masterData.clients = res.clients || []; // 載入客戶
+                rawData = (res.records || []).map(r => ({
+                    ...r,
+                    needs: typeof r.needs === 'string' ? JSON.parse(r.needs) : (r.needs || []),
+                    cargo: typeof r.cargo === 'string' ? JSON.parse(r.cargo) : (r.cargo || [])
+                }));
+                updateDatalists();
+                filterData();
+            } catch (e) { alert("同步連線失敗，請檢查網址與權限設定！"); }
+            finally { toggleLoading(false); }
         }
-    }
 
-    // 更新客戶選單
-    function updateDatalists() {
-        const list = document.getElementById('clientOptions');
-        list.innerHTML = masterData.clients.map(c => `<option value="${c.客戶簡稱}">`).join('');
-    }
-
-    // 客戶連動地址
-    function handleClientLookup(val) {
-        const c = masterData.clients.find(x => x.客戶簡稱 === val);
-        if (c) document.getElementById('f-to-addr').value = c.下貨地址 || '';
-    }
-
-    // 渲染主表格
-    function filterData() {
-        const clientQ = document.getElementById('searchClient').value.toLowerCase();
-        const monthQ = document.getElementById('searchMonth').value;
-        const tbody = document.getElementById('dataTable');
-        const filtered = rawData.filter(d => {
-            const matchClient = (d.client || "").toLowerCase().includes(clientQ) || JSON.stringify(d.cargo).includes(clientQ);
-            const matchMonth = !monthQ || d.date.startsWith(monthQ);
-            return matchClient && matchMonth;
-        });
-        tbody.innerHTML = filtered.map(d => `
-            <tr class="hover:bg-slate-50 font-bold border-b-2">
-                <td class="p-6">
-                    <div class="text-2xl font-black ${d.company === '何鑫實業' ? 'text-blue-600' : 'text-orange-600'}">${d.company}</div>
-                    <div class="text-lg text-slate-500">${fmtDate(d.date)} | ${fmtTime(d.time)}</div>
-                </td>
-                <td class="p-6">
-                    <div class="text-2xl text-slate-800">${d.client}</div>
-                    <div class="text-sm text-emerald-600">${d.from} ⮕ ${d.to_name}</div>
-                </td>
-                <td class="p-6 text-right text-2xl font-black">$${(Number(d.price) || 0).toLocaleString()}</td>
-                <td class="p-6 text-center">
-                    <button onclick="printDispatch('${d.id}')" class="text-emerald-600 mx-2">列印</button>
-                    <button onclick="openModal('edit', '${d.id}')" class="text-blue-600 mx-2">編輯</button>
-                </td>
-            </tr>`).join('');
-    }
-
-    // 完整的 Modal 控制
-    function openModal(mode, id = null) {
-        const form = document.getElementById('dispatchForm');
-        form.reset();
-        document.getElementById('cargoList').innerHTML = '';
-        document.getElementById('editId').value = id || '';
-        document.getElementById('modalTitle').innerText = id ? "編輯派車" : "新增派車";
-
-        if (id) {
-            const d = rawData.find(x => x.id.toString() === id.toString());
-            if (d) {
-                document.getElementById('f-company').value = d.company;
-                document.getElementById('f-date').value = d.date;
-                document.getElementById('f-time').value = fmtTime(d.time);
-                document.getElementById('f-from').value = d.from;
-                document.getElementById('f-to-name').value = d.to_name;
-                document.getElementById('f-stop-c').value = d.stop_c;
-                document.getElementById('f-to-addr').value = d.to_addr;
-                document.getElementById('f-l').value = d.l;
-                document.getElementById('f-w').value = d.w;
-                document.getElementById('f-h').value = d.h;
-                document.getElementById('f-wt').value = d.wt;
-                document.getElementById('f-notes').value = d.notes;
-                document.getElementById('f-vendor').value = d.vendor;
-                document.getElementById('f-price').value = d.price;
-                d.cargo.forEach(c => addCargoRow(c.n, c.q, c.u));
-            }
-        } else {
-            addCargoRow(); // 新增時預設一行品項
+        function updateDatalists() {
+            const list = document.getElementById('clientOptions');
+            list.innerHTML = masterData.clients.map(c => `<option value="${c.客戶簡稱}">`).join('');
         }
-        document.getElementById('formModal').style.display = 'flex';
-    }
 
-    // 儲存資料 (遺漏的關鍵函式)
-    document.getElementById('dispatchForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const cargo = [];
-        const ns = document.getElementsByName('cn[]');
-        const qs = document.getElementsByName('cq[]');
-        const us = document.getElementsByName('cu[]');
-        for (let i = 0; i < ns.length; i++) {
-            if (ns[i].value) cargo.push({ n: ns[i].value, q: qs[i].value, u: us[i].value });
+        function handleClientLookup(val) {
+            const c = masterData.clients.find(x => x.客戶簡稱 === val);
+            if (c) document.getElementById('f-to-addr').value = c.下貨地址 || ''; // 連動地址
         }
-        const data = {
-            id: document.getElementById('editId').value || Date.now().toString(),
-            company: document.getElementById('f-company').value,
-            date: document.getElementById('f-date').value,
-            time: document.getElementById('f-time').value,
-            from: document.getElementById('f-from').value,
-            to_name: document.getElementById('f-to-name').value,
-            stop_c: document.getElementById('f-stop-c').value,
-            to_addr: document.getElementById('f-to-addr').value,
-            client: document.getElementById('f-client').value,
-            l: document.getElementById('f-l').value,
-            w: document.getElementById('f-w').value,
-            h: document.getElementById('f-h').value,
-            wt: document.getElementById('f-wt').value,
-            notes: document.getElementById('f-notes').value,
-            vendor: document.getElementById('f-vendor').value,
-            price: document.getElementById('f-price').value,
-            cargo: cargo
-        };
-        toggleLoading(true);
-        try {
-            await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save', data }) });
-            setTimeout(() => { syncData(); closeModal(); }, 1000);
-        } catch (err) { alert("儲存失敗"); }
-    };
 
-    function closeModal() { document.getElementById('formModal').style.display = 'none'; }
-    function toggleLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
-    function addCargoRow(n = '', q = '1', u = '式') {
-        document.getElementById('cargoList').insertAdjacentHTML('beforeend', `
+        function filterData() {
+            const clientQ = document.getElementById('searchClient').value.toLowerCase();
+            const monthQ = document.getElementById('searchMonth').value;
+            const tbody = document.getElementById('dataTable');
+            const filtered = rawData.filter(d => {
+                const matchClient = (d.client || "").toLowerCase().includes(clientQ) || JSON.stringify(d.cargo).includes(clientQ);
+                const matchMonth = !monthQ || d.date.startsWith(monthQ);
+                return matchClient && matchMonth;
+            });
+            tbody.innerHTML = filtered.map(d => `
+                <tr class="hover:bg-slate-50 font-bold border-b-2">
+                    <td class="p-6">
+                        <div class="text-2xl font-black ${d.company === '何鑫實業' ? 'text-blue-600' : 'text-orange-600'}">${d.company}</div>
+                        <div class="text-lg text-slate-500">${fmtDate(d.date)} | ${fmtTime(d.time)}</div>
+                    </td>
+                    <td class="p-6">
+                        <div class="text-2xl text-slate-800">${d.client}</div>
+                        <div class="text-sm text-emerald-600">${d.from} ⮕ ${d.to_name}</div>
+                    </td>
+                    <td class="p-6 text-right text-2xl font-black">$${(Number(d.price) || 0).toLocaleString()}</td>
+                    <td class="p-6 text-center">
+                        <div class="flex gap-2 justify-center">
+                            <button onclick="printDispatch('${d.id}')" class="text-emerald-600">列印</button>
+                            <button onclick="openModal('edit', '${d.id}')" class="text-blue-600">編輯</button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function exportExcel() {
+            const range = document.getElementById('exportRange').value;
+            const now = new Date();
+            const filtered = rawData.filter(d => {
+                const dDate = new Date(d.date);
+                if(range === 'year') return dDate.getFullYear() === now.getFullYear();
+                return dDate.getFullYear() === now.getFullYear() && dDate.getMonth() === now.getMonth();
+            });
+            const ws = XLSX.utils.json_to_sheet(filtered.map(d => ({ '日期': fmtDate(d.date), '公司': d.company, '客戶': d.client, '起點': d.from, '目的地': d.to_name, '報價': d.price })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "報表");
+            XLSX.writeFile(wb, `派車報表_${range}.xlsx`);
+        }
+
+        function openModal(mode, id = null) {
+            const form = document.getElementById('dispatchForm');
+            form.reset();
+            document.getElementById('cargoList').innerHTML = '';
+            document.getElementById('editId').value = id || '';
+            document.getElementById('modalTitle').innerText = id ? "編輯紀錄" : "新增派車";
+            if (id) {
+                const d = rawData.find(x => x.id.toString() === id.toString());
+                if (d) {
+                    ['company','date','from','to-name','stop-c','to-addr','client','applicant','l','w','h','wt','notes','vendor','price'].forEach(k => {
+                        const el = document.getElementById('f-'+k);
+                        if(el) el.value = d[k.replace('-','_')] || '';
+                    });
+                    document.getElementById('f-time').value = fmtTime(d.time);
+                    d.cargo.forEach(c => addCargoRow(c.n, c.q, c.u));
+                }
+            } else { addCargoRow(); }
+            document.getElementById('formModal').style.display = 'flex';
+        }
+
+        function addCargoRow(n='', q='1', u='式') {
+            document.getElementById('cargoList').insertAdjacentHTML('beforeend', `
             <div class="flex gap-4 items-center">
-                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱/型號" class="flex-[4]">
+                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱" class="flex-[4]">
                 <input type="number" name="cq[]" value="${q}" class="flex-1 text-center">
                 <input type="text" name="cu[]" value="${u}" class="flex-1 text-center">
                 <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 text-3xl">&times;</button>
             </div>`);
-    }
+        }
 
-    document.addEventListener('DOMContentLoaded', syncData);
-</script>
+        document.getElementById('dispatchForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const cargo = []; const ns = document.getElementsByName('cn[]');
+            for(let i=0; i<ns.length; i++) if(ns[i].value) cargo.push({ n: ns[i].value, q: document.getElementsByName('cq[]')[i].value, u: document.getElementsByName('cu[]')[i].value });
+            const data = {
+                id: document.getElementById('editId').value || Date.now().toString(),
+                company: document.getElementById('f-company').value,
+                date: document.getElementById('f-date').value,
+                time: document.getElementById('f-time').value,
+                client: document.getElementById('f-client').value,
+                applicant: document.getElementById('f-applicant').value,
+                from: document.getElementById('f-from').value,
+                to_name: document.getElementById('f-to-name').value,
+                to_addr: document.getElementById('f-to-addr').value,
+                stop_c: document.getElementById('f-stop-c').value,
+                l: document.getElementById('f-l').value, w: document.getElementById('f-w').value,
+                h: document.getElementById('f-h').value, wt: document.getElementById('f-wt').value,
+                vendor: document.getElementById('f-vendor').value,
+                price: document.getElementById('f-price').value,
+                notes: document.getElementById('f-notes').value,
+                cargo: cargo
+            };
+            toggleLoading(true);
+            await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'save', data }) });
+            setTimeout(() => { syncData(); closeModal(); }, 1200);
+        };
+
+        function printDispatch(id) {
+            const d = rawData.find(x => x.id.toString() === id.toString());
+            document.getElementById('p-company').innerText = d.company + " 派車單";
+            document.getElementById('p-content').innerHTML = `
+                <p>日期：${fmtDate(d.date)} | 時間：${fmtTime(d.time)}</p>
+                <p>客戶：${d.client} | 申請人：${d.applicant}</p>
+                <p>行程：${d.from} ⮕ ${d.stop_c ? d.stop_c + ' ⮕ ' : ''} ${d.to_name}</p>
+                <p>地址：${d.to_addr}</p>
+            `;
+            document.getElementById('p-cargo').innerHTML = d.cargo.map(c => `<tr><td class="border p-2">${c.n}</td><td class="border p-2 text-center">${c.q}${c.u}</td></tr>`).join('');
+            window.print();
+        }
+
+        function closeModal() { document.getElementById('formModal').style.display='none'; }
+        function toggleLoading(s) { document.getElementById('loading').style.display = s?'flex':'none'; }
+        document.addEventListener('DOMContentLoaded', syncData);
+    </script>
 </body>
 </html>
