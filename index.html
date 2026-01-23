@@ -28,30 +28,31 @@
             <div class="flex items-center gap-4">
                 <div class="bg-blue-600 p-5 rounded-2xl text-white shadow-lg"><i class="fas fa-truck-loading text-3xl"></i></div>
                 <div>
-                    <h1 class="text-3xl font-black text-slate-800 tracking-tighter">何鑫實業 / 薪昌</h1>
+                    <h1 class="text-3xl font-black text-slate-800">何鑫實業 / 薪昌</h1>
                     <p class="text-sm font-bold text-blue-500 tracking-widest uppercase">Cloud Management System</p>
                 </div>
             </div>
-            <div class="flex gap-4 w-full md:w-auto">
-                <button onclick="syncData()" class="flex-1 bg-slate-100 px-6 py-4 rounded-2xl font-black hover:bg-slate-200">同步資料</button>
-                <button onclick="exportMonthlyReport()" class="flex-1 bg-emerald-600 text-white px-6 py-4 rounded-2xl font-black shadow-lg">轉出Excel報表</button>
-                <button onclick="openModal('add')" class="flex-1 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg">新增派車</button>
+            <div class="flex gap-4">
+                <button onclick="syncData()" class="bg-slate-100 px-6 py-4 rounded-2xl font-black">同步資料</button>
+                <button onclick="exportMonthlyReport()" class="bg-emerald-600 text-white px-6 py-4 rounded-2xl font-black shadow-lg">轉出報表</button>
+                <button onclick="openModal('add')" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg">新增派車</button>
             </div>
         </header>
 
         <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-100">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 border-b-2 border-slate-100">
-                    <tr class="text-slate-500 font-black text-sm uppercase tracking-wider">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b-2">
+                    <tr class="text-slate-500 font-black text-sm uppercase">
                         <th class="p-6">公司 / 日期時間</th>
                         <th class="p-6">客戶資訊</th>
+                        <th class="p-6">需求車輛</th>
                         <th class="p-6">行程路線</th>
                         <th class="p-6 text-right">廠商 / 報價</th>
                         <th class="p-6 text-center">操作</th>
                     </tr>
                 </thead>
                 <tbody id="dataTable" class="divide-y-2 divide-slate-50">
-                    <tr><td colspan="5" class="p-20 text-center text-slate-300 font-bold">尚未同步數據...</td></tr>
+                    <tr><td colspan="6" class="p-20 text-center font-bold">點擊「同步資料」開始讀取...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -61,20 +62,14 @@
         <div class="bg-white rounded-[3rem] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
             <div class="p-8 border-b-2 flex justify-between items-center bg-slate-50">
                 <h2 id="modalTitle" class="text-3xl font-black text-slate-800">新增派車</h2>
-                <button onclick="closeModal()" class="text-4xl font-bold text-slate-300 hover:text-slate-600">&times;</button>
+                <button onclick="closeModal()" class="text-4xl font-bold text-slate-300">&times;</button>
             </div>
             
             <form id="dispatchForm" class="flex-1 overflow-y-auto p-10 space-y-10">
                 <input type="hidden" id="editId">
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div>
-                        <div class="section-title">所屬公司</div>
-                        <select id="f-company" class="font-black">
-                            <option value="何鑫實業">何鑫實業</option>
-                            <option value="薪昌">薪昌</option>
-                        </select>
-                    </div>
+                    <div><div class="section-title">所屬公司</div><select id="f-company" class="font-black"><option value="何鑫實業">何鑫實業</option><option value="薪昌">薪昌</option></select></div>
                     <div><div class="section-title">日期</div><input type="date" id="f-date" required></div>
                     <div><div class="section-title">時間</div><input type="time" id="f-time" required></div>
                 </div>
@@ -91,32 +86,24 @@
                 <div>
                     <div class="section-title">特殊輔助設備 (可複選)</div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold">
-                            <input type="checkbox" name="f-needs" value="需車尾門" class="w-6 h-6 mr-3"> 需車尾門
-                        </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold">
-                            <input type="checkbox" name="f-needs" value="需油壓板車" class="w-6 h-6 mr-3"> 需油壓板車
-                        </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold">
-                            <input type="checkbox" name="f-needs" value="需手拉吊車" class="w-6 h-6 mr-3"> 需手拉吊車
-                        </label>
-                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold">
-                            <input type="checkbox" name="f-needs" value="需吊籃" class="w-6 h-6 mr-3"> 需吊籃
-                        </label>
+                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold"><input type="checkbox" name="f-needs" value="需車尾門" class="w-6 h-6 mr-3"> 需車尾門</label>
+                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold"><input type="checkbox" name="f-needs" value="需油壓板車" class="w-6 h-6 mr-3"> 需油壓板車</label>
+                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold"><input type="checkbox" name="f-needs" value="需手拉吊車" class="w-6 h-6 mr-3"> 需手拉吊車</label>
+                        <label class="flex items-center p-4 border-2 rounded-2xl font-bold"><input type="checkbox" name="f-needs" value="需吊籃" class="w-6 h-6 mr-3"> 需吊籃</label>
                     </div>
                 </div>
 
                 <div>
-                    <div class="section-title">路線行程與地點</div>
+                    <div class="section-title">路線行程 (FROM -> TO)</div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                        <div><label class="text-sm font-black text-emerald-600">上貨地點 (FROM)</label><input type="text" id="f-from" value="公司"></div>
-                        <div><label class="text-sm font-black text-rose-500">下貨地點名稱 (TO NAME)</label><input type="text" id="f-to-name" placeholder="例如：工地名稱"></div>
+                        <input type="text" id="f-from" value="公司">
+                        <input type="text" id="f-to-name" placeholder="下貨地點名稱">
                     </div>
-                    <textarea id="f-address" rows="2" placeholder="詳細下貨地址 *"></textarea>
+                    <textarea id="f-address" rows="2" placeholder="詳細收貨地址 *"></textarea>
                 </div>
 
                 <div>
-                    <div class="section-title">貨物總尺寸 (選填)</div>
+                    <div class="section-title">貨物尺寸 (選填)</div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <input type="text" id="f-l" placeholder="長 (L) [cm]">
                         <input type="text" id="f-w" placeholder="寬 (W) [cm]">
@@ -128,13 +115,11 @@
                 <div>
                     <div class="section-title">出貨品項清單 *</div>
                     <div id="cargoList" class="space-y-4"></div>
-                    <button type="button" onclick="addCargoRow()" class="mt-6 w-full border-2 border-dashed border-blue-200 p-4 rounded-2xl text-blue-600 font-black">
-                        + 新增品項
-                    </button>
+                    <button type="button" onclick="addCargoRow()" class="mt-6 w-full border-2 border-dashed p-4 rounded-2xl text-blue-600 font-black">+ 新增品項</button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t-2 pt-10">
-                    <div><div class="section-title">廠商</div><input type="text" id="f-vendor" list="vendorOptions" placeholder="廠商"><datalist id="vendorOptions"></datalist></div>
+                    <div><div class="section-title">廠商與車型</div><input type="text" id="f-vendor" list="vendorOptions" placeholder="廠商"><datalist id="vendorOptions"></datalist><input type="text" id="f-vspec" placeholder="車輛規格" class="mt-4"></div>
                     <div><div class="section-title">報價</div><input type="number" id="f-price" placeholder="NT$"></div>
                 </div>
 
@@ -148,14 +133,9 @@
 
     <div id="printArea" class="p-10 text-black">
         <h1 id="p-title" class="text-4xl font-black text-center mb-10 border-b-8 border-black pb-4"></h1>
-        <div class="grid grid-cols-2 gap-8 text-2xl mb-10">
-            <p><strong>日期時間：</strong> <span id="p-dt"></span></p>
-            <p><strong>客戶簡稱：</strong> <span id="p-client"></span></p>
-            <p class="col-span-2"><strong>收貨地址：</strong> <span id="p-addr"></span></p>
-            <p class="col-span-2"><strong>輔助設備：</strong> <span id="p-needs"></span></p>
-        </div>
+        <div id="p-info" class="grid grid-cols-2 gap-8 text-2xl mb-10"></div>
         <table class="w-full border-4 border-black text-2xl">
-            <thead><tr class="bg-slate-100"><th class="border-2 border-black p-4">品項名稱</th><th class="border-2 border-black p-4 text-center">數量</th></tr></thead>
+            <thead><tr class="bg-slate-100"><th class="border-2 border-black p-4 text-left">品項</th><th class="border-2 border-black p-4 text-center">數量</th></tr></thead>
             <tbody id="p-cargo"></tbody>
         </table>
     </div>
@@ -166,9 +146,9 @@
         let masterData = { clients: [], vendors: [] };
         let dispatches = [];
 
-        // 格式化日期與時間：修復 ISO 字串顯示問題
+        // 格式化日期時間：解決 ISO 與 1899 問題
         function formatVal(val, type) {
-            if (!val || val.includes("1899-12-30")) return "-";
+            if (!val || val.toString().includes("1899-12-30")) return "-";
             const d = new Date(val);
             if (isNaN(d.getTime())) return val;
             return type === 'date' 
@@ -193,26 +173,24 @@
 
                 renderTable();
                 updateDatalists();
-            } catch (err) { alert("連線失敗，請檢查網址與 GAS 權限設定！"); }
+            } catch (err) { alert("同步失敗！請確認 GAS 是否部署為「所有人」存取。"); }
             finally { toggleLoading(false); }
         }
 
         function renderTable() {
             const tbody = document.getElementById('dataTable');
             tbody.innerHTML = dispatches.map(d => `
-                <tr class="hover:bg-slate-50 font-bold border-b-2 border-slate-50">
+                <tr class="hover:bg-slate-50 font-bold border-b-2">
                     <td class="p-6">
                         <div class="text-2xl font-black ${d.company === '何鑫實業' ? 'text-blue-600' : 'text-orange-600'}">${d.company}</div>
                         <div class="text-lg text-slate-500 mt-1">${d.displayDate} | ${d.displayTime}</div>
                     </td>
                     <td class="p-6 text-2xl text-slate-800">${d.client}</td>
-                    <td class="p-6">
-                        <div class="text-emerald-600 text-sm font-black">FROM: 公司 ⮕</div>
-                        <div class="text-slate-800 text-lg">${d.address}</div>
-                    </td>
+                    <td class="p-6 text-slate-600">${d.vspec || '-'}</td>
+                    <td class="p-6"><div class="text-emerald-600 text-sm font-black">公司 ⮕</div><div class="text-lg">${d.address}</div></td>
                     <td class="p-6 text-right text-2xl font-black text-slate-900">$${(Number(d.price) || 0).toLocaleString()}</td>
                     <td class="p-6 text-center">
-                        <div class="flex gap-4 justify-center font-black">
+                        <div class="flex gap-4 justify-center">
                             <button onclick="openModal('edit', '${d.id}')" class="text-blue-600">編輯</button>
                             <button onclick="printDispatch('${d.id}')" class="text-emerald-600">列印</button>
                             <button onclick="deleteDispatch('${d.id}')" class="text-rose-400">刪除</button>
@@ -223,26 +201,25 @@
         }
 
         function exportMonthlyReport() {
-            const stats = {}; let grandTotal = 0;
+            const stats = {}; let total = 0;
             const data = dispatches.map(d => {
-                const p = Number(d.price) || 0; grandTotal += p;
+                const p = Number(d.price) || 0; total += p;
                 if(d.vendor) stats[d.vendor] = (stats[d.vendor] || 0) + p;
                 return { '日期': d.displayDate, '客戶': d.client, '廠商': d.vendor, '金額': p };
             });
-            data.push({}); data.push({ '日期': '--- 廠商合計統計 ---' });
+            data.push({}); data.push({ '日期': '--- 統計 ---' });
             Object.keys(stats).forEach(v => data.push({ '日期': v, '金額': stats[v] }));
-            data.push({ '日期': '總計金額', '金額': grandTotal });
-
+            data.push({ '日期': '總計', '金額': total });
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "派車統計報表");
-            XLSX.writeFile(wb, `派車報表_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "統計報表");
+            XLSX.writeFile(wb, `報表_${new Date().toLocaleDateString()}.xlsx`);
         }
 
         function addCargoRow(n='', q='1', u='箱') {
             document.getElementById('cargoList').insertAdjacentHTML('beforeend', `
             <div class="flex gap-4 items-center">
-                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱/型號" class="flex-[4]">
+                <input type="text" name="cn[]" value="${n}" placeholder="品項名稱" class="flex-[4]">
                 <input type="number" name="cq[]" value="${q}" class="flex-1 text-center">
                 <input type="text" name="cu[]" value="${u}" class="flex-1 text-center">
                 <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 text-3xl">&times;</button>
@@ -252,11 +229,13 @@
         function printDispatch(id) {
             const d = dispatches.find(x => x.id.toString() === id.toString());
             document.getElementById('p-title').innerText = d.company + " 派車單";
-            document.getElementById('p-dt').innerText = d.displayDate + " " + d.displayTime;
-            document.getElementById('p-client').innerText = d.client;
-            document.getElementById('p-addr').innerText = d.address;
-            document.getElementById('p-needs').innerText = d.needs.join(", ") || "無";
-            document.getElementById('p-cargo').innerHTML = d.cargo.map(c => `<tr><td class="border-2 border-black p-4">${c.n}</td><td class="border-2 border-black p-4 text-center">${c.q}${c.u}</td></tr>`).join('');
+            document.getElementById('p-info').innerHTML = `
+                <p><strong>日期時間：</strong> ${d.displayDate} ${d.displayTime}</p>
+                <p><strong>客戶簡稱：</strong> ${d.client}</p>
+                <p class="col-span-2"><strong>收貨地址：</strong> ${d.address}</p>
+                <p class="col-span-2"><strong>輔助需求：</strong> ${d.needs.join(", ") || "無"}</p>
+            `;
+            document.getElementById('p-cargo').innerHTML = d.cargo.map(c => `<tr><td class="border-2 p-4">${c.n}</td><td class="border-2 p-4 text-center">${c.q}${c.u}</td></tr>`).join('');
             window.print();
         }
 
@@ -274,7 +253,7 @@
                 const d = dispatches.find(x => x.id.toString() === id.toString());
                 if(d) {
                     document.getElementById('f-company').value = d.company;
-                    ['date','time','applicant','client','address','vendor','price','l','w','h','wt'].forEach(k => {
+                    ['date','time','applicant','client','address','vendor','price','l','w','h','wt','vspec'].forEach(k => {
                         const el = document.getElementById('f-'+k); if(el) el.value = d[k];
                     });
                     document.querySelectorAll('input[name="f-needs"]').forEach(cb => cb.checked = d.needs.includes(cb.value));
@@ -301,15 +280,26 @@
                 h: document.getElementById('f-h').value, wt: document.getElementById('f-wt').value,
                 vendor: document.getElementById('f-vendor').value,
                 price: document.getElementById('f-price').value,
+                vspec: document.getElementById('f-vspec').value,
                 cargo: cargo
             };
             await saveToCloud(data);
         };
 
-        async function deleteDispatch(id) { if(confirm('刪除紀錄？')) { toggleLoading(true); await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'delete', data: {id} }) }); setTimeout(syncData, 1000); } }
+        async function deleteDispatch(id) { if(confirm('確定刪除紀錄？')) { toggleLoading(true); await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'delete', data: {id} }) }); setTimeout(syncData, 1000); } }
         function closeModal() { document.getElementById('formModal').style.display='none'; }
         function toggleLoading(s) { document.getElementById('loading').style.display = s?'flex':'none'; }
         document.addEventListener('DOMContentLoaded', () => { if(GAS_URL.length > 20) syncData(); });
+        function handleClientLookup(val) {
+            const c = masterData.clients.find(x => x.客戶簡稱 === val);
+            if (c) {
+                document.getElementById('f-address').value = c.下貨地址 || '';
+            }
+        }
+        function updateDatalists() {
+            document.getElementById('clientOptions').innerHTML = masterData.clients.map(c => `<option value="${c.客戶簡稱}">`).join('');
+            document.getElementById('vendorOptions').innerHTML = masterData.vendors.map(v => `<option value="${v}">`).join('');
+        }
     </script>
 </body>
 </html>
